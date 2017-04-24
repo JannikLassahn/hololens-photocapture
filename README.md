@@ -21,6 +21,7 @@ The current status of the camera is visible in the lower right corner.
 
 ### Build ###
 
+* HoloToolkit > Configure > Apply HoloLens Project Settings
 * HoloToolkit > Build Window > Build Visual Studio SLN 
 
 **OR**
