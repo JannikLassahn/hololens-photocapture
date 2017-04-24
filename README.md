@@ -3,7 +3,7 @@
 
 ### What is this repository for? ###
 
-This is a sample application for using the Unity's PhotoCapture API in combination with HoloLens. Most noticeably, there should be holograms visible in the final image.
+This is a sample application for using Unity's PhotoCapture API in combination with HoloLens. Most noticeably, there should be holograms visible in the final image.
 
 The *PhotoManager*, responsible for taking and saving images is being controlled by the following voice commands:
 
