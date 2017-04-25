@@ -9,7 +9,7 @@ The *PhotoManager*, responsible for taking and saving images is being controlled
 
 **Take photo:** Takes a photo an saves it.
 
-**Stop camera: **  Stops the camera.
+**Stop camera:**  Stops the camera.
 
 The current status of the camera is visible in the lower right corner.
 
