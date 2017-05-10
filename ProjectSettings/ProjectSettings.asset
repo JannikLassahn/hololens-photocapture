@@ -430,7 +430,7 @@ PlayerSettings:
       MusicLibrary: False
       Objects3D: False
       PhoneCall: False
-      PicturesLibrary: False
+      PicturesLibrary: True
       PrivateNetworkClientServer: False
       Proximity: False
       RemovableStorage: False

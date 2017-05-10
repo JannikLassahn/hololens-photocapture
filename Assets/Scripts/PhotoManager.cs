@@ -24,13 +24,37 @@ public class PhotoManager : MonoBehaviour
     /// </summary>
     private bool isReady = false;
 
+    /// <summary>
+    /// The path to the image in the applications local folder.
+    /// </summary>
+    private string currentImagePath;
+
+    /// <summary>
+    /// The path to the users picture folder.
+    /// </summary>
+    private string pictureFolderPath;
+
     private void Start()
     {
         Assert.IsNotNull(Info, "The PhotoManager requires a text mesh.");
 
         Info.text = "Camera off";
         PhotoCapture.CreateAsync(true, OnPhotoCaptureCreated);
+
+#if NETFX_CORE
+        getPicturesFolderAsync();
+#endif
+
     }
+
+#if NETFX_CORE
+
+    private async void getPicturesFolderAsync() {
+        Windows.Storage.StorageLibrary picturesStorage = await Windows.Storage.StorageLibrary.GetLibraryAsync(Windows.Storage.KnownLibraryId.Pictures);
+        pictureFolderPath = picturesStorage.SaveFolder.Path;
+    }
+
+#endif
 
     private void OnPhotoCaptureCreated(PhotoCapture captureObject)
     {
@@ -62,9 +86,9 @@ public class PhotoManager : MonoBehaviour
         if (isReady)
         {
             string file = string.Format(@"Image_{0:yyyy-MM-dd_hh-mm-ss-tt}.jpg", DateTime.Now);
-            string path = System.IO.Path.Combine(Application.persistentDataPath, file);
+            currentImagePath = System.IO.Path.Combine(Application.persistentDataPath, file);
 
-            capture.TakePhotoAsync(path, PhotoCaptureFileOutputFormat.JPG, OnCapturedPhotoToDisk);
+            capture.TakePhotoAsync(currentImagePath, PhotoCaptureFileOutputFormat.JPG, OnCapturedPhotoToDisk);
         }
         else
         {
@@ -87,13 +111,34 @@ public class PhotoManager : MonoBehaviour
     {
         if (result.success)
         {
-            Info.text = "saved photo";
-            Debug.Log("Saved image at " + Application.persistentDataPath);
+
+#if NETFX_CORE
+            try 
+            {
+                if(pictureFolderPath != null)
+                {
+                    System.IO.File.Move(currentImagePath, System.IO.Path.Combine(pictureFolderPath, "Camera Roll", System.IO.Path.GetFileName(currentImagePath)));
+                    Info.text = "Saved photo in camera roll";
+                }
+                else 
+                {
+                    Info.text = "Saved photo to temp";
+                }
+            } 
+            catch(Exception e) 
+            {
+                Info.text = "Failed to move to camera roll";
+            }
+#else
+            Info.text = "Saved photo";
+            Debug.Log("Saved image at " + currentImagePath);
+#endif
+
         }
         else
         {
-            Info.text = "failed to save photo";
-            Debug.LogWarning(string.Format("Failed to save photo to disk ({0})", result.hResult));
+            Info.text = "Failed to save photo";
+            Debug.LogError(string.Format("Failed to save photo to disk ({0})", result.hResult));
         }
     }
 
