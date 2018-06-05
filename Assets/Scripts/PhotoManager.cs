@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.VR.WSA.WebCam;
+using UnityEngine.XR.WSA.WebCam;
 
 /// <summary>
 /// Manages taking and saving photos.
@@ -13,6 +13,16 @@ public class PhotoManager : MonoBehaviour
     /// Displays status information of the camera.
     /// </summary>
     public TextMesh Info;
+
+    /// <summary>
+    /// Whether or not to show holograms in the photo.
+    /// </summary>
+    public bool ShowHolograms = true;
+
+    /// <summary>
+    /// Whether or not to start the camera immediatly.
+    /// </summary>
+    public bool AutoStart = true;
 
     /// <summary>
     /// Actual camera instance.
@@ -39,17 +49,62 @@ public class PhotoManager : MonoBehaviour
         Assert.IsNotNull(Info, "The PhotoManager requires a text mesh.");
 
         Info.text = "Camera off";
-        PhotoCapture.CreateAsync(true, OnPhotoCaptureCreated);
+
+        if (AutoStart)
+            StartCamera();
 
 #if NETFX_CORE
-        getPicturesFolderAsync();
+        GetPicturesFolderAsync();
 #endif
 
     }
 
+    /// <summary>
+    /// Starts the photo mode.
+    /// </summary>
+    public void StartCamera()
+    {
+        if (isReady)
+        {
+            Debug.Log("Camera is already running.");
+            return;
+        }
+
+        PhotoCapture.CreateAsync(ShowHolograms, OnPhotoCaptureCreated);
+    }
+
+    /// <summary>
+    /// Take a photo and save it to a temporary application folder.
+    /// </summary>
+    public void TakePhoto()
+    {
+        if (isReady)
+        {
+            string file = string.Format(@"Image_{0:yyyy-MM-dd_hh-mm-ss-tt}.jpg", DateTime.Now);
+            currentImagePath = System.IO.Path.Combine(Application.persistentDataPath, file);
+            capture.TakePhotoAsync(currentImagePath, PhotoCaptureFileOutputFormat.JPG, OnCapturedPhotoToDisk);
+        }
+        else
+        {
+            Debug.LogWarning("The camera is not yet ready.");
+        }
+    }
+
+    /// <summary>
+    /// Stop the photo mode.
+    /// </summary>
+    public void StopCamera()
+    {
+        if (isReady)
+        {
+            capture.StopPhotoModeAsync(OnPhotoModeStopped);
+        }
+    }
+
 #if NETFX_CORE
 
-    private async void getPicturesFolderAsync() {
+    private async void GetPicturesFolderAsync() 
+    {
         Windows.Storage.StorageLibrary picturesStorage = await Windows.Storage.StorageLibrary.GetLibraryAsync(Windows.Storage.KnownLibraryId.Pictures);
         pictureFolderPath = picturesStorage.SaveFolder.Path;
     }
@@ -74,37 +129,7 @@ public class PhotoManager : MonoBehaviour
     private void OnPhotoModeStarted(PhotoCapture.PhotoCaptureResult result)
     {
         isReady = result.success;
-        Info.text = "Camera ready";
-    }
-
-
-    /// <summary>
-    /// Take a photo and save it to a temporary application folder.
-    /// </summary>
-    public void TakePhoto()
-    {
-        if (isReady)
-        {
-            string file = string.Format(@"Image_{0:yyyy-MM-dd_hh-mm-ss-tt}.jpg", DateTime.Now);
-            currentImagePath = System.IO.Path.Combine(Application.persistentDataPath, file);
-
-            capture.TakePhotoAsync(currentImagePath, PhotoCaptureFileOutputFormat.JPG, OnCapturedPhotoToDisk);
-        }
-        else
-        {
-            Debug.LogWarning("The camera is not yet ready.");
-        }
-    }
-
-    /// <summary>
-    /// Stop the photo mode.
-    /// </summary>
-    public void StopCamera()
-    {
-        if (isReady)
-        {
-            capture.StopPhotoModeAsync(OnPhotoModeStopped);
-        }
+        Info.text = isReady ? "Camera ready" : "Camera failed to start";
     }
 
     private void OnCapturedPhotoToDisk(PhotoCapture.PhotoCaptureResult result)
@@ -128,6 +153,7 @@ public class PhotoManager : MonoBehaviour
             catch(Exception e) 
             {
                 Info.text = "Failed to move to camera roll";
+                Debug.Log(e.Message);
             }
 #else
             Info.text = "Saved photo";
