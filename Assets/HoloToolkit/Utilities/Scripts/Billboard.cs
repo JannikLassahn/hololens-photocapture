@@ -7,15 +7,21 @@ namespace HoloToolkit.Unity
 {
     public enum PivotAxis
     {
-        // Rotate about all axes.
-        Free,
+        // Most common options, preserving current functionality with the same enum order.
+        XY,
+        Y,
         // Rotate about an individual axis.
-        Y
+        X,
+        Z,
+        // Rotate about a pair of axes.
+        XZ,
+        YZ,
+        // Rotate about all axes.
+        Free
     }
 
     /// <summary>
-    /// The Billboard class implements the behaviors needed to keep a GameObject 
-    /// oriented towards the user.
+    /// The Billboard class implements the behaviors needed to keep a GameObject oriented towards the user.
     /// </summary>
     public class Billboard : MonoBehaviour
     {
@@ -23,10 +29,33 @@ namespace HoloToolkit.Unity
         /// The axis about which the object will rotate.
         /// </summary>
         [Tooltip("Specifies the axis about which the object will rotate.")]
-        public PivotAxis PivotAxis = PivotAxis.Free;
+        [SerializeField]
+        private PivotAxis pivotAxis = PivotAxis.XY;
+        public PivotAxis PivotAxis
+        {
+            get { return pivotAxis; }
+            set { pivotAxis = value; }
+        }
+
+        /// <summary>
+        /// The target we will orient to. If no target is specified, the main camera will be used.
+        /// </summary>
+        [Tooltip("Specifies the target we will orient to. If no target is specified, the main camera will be used.")]
+        [SerializeField]
+        private Transform targetTransform;
+        public Transform TargetTransform
+        {
+            get { return targetTransform; }
+            set { targetTransform = value; }
+        }
 
         private void OnEnable()
         {
+            if (TargetTransform == null)
+            {
+                TargetTransform = CameraCache.Main.transform;
+            }
+
             Update();
         }
 
@@ -35,18 +64,42 @@ namespace HoloToolkit.Unity
         /// </summary>
         private void Update()
         {
-            if (!Camera.main)
+            if (TargetTransform == null)
             {
                 return;
             }
 
             // Get a Vector that points from the target to the main camera.
-            Vector3 directionToTarget = Camera.main.transform.position - transform.position;
+            Vector3 directionToTarget = TargetTransform.position - transform.position;
+            Vector3 targetUpVector = CameraCache.Main.transform.up;
 
             // Adjust for the pivot axis.
             switch (PivotAxis)
             {
+                case PivotAxis.X:
+                    directionToTarget.x = 0.0f;
+                    targetUpVector = transform.up;
+                    break;
+
                 case PivotAxis.Y:
+                    directionToTarget.y = 0.0f;
+                    targetUpVector = transform.up;
+                    break;
+
+                case PivotAxis.Z:
+                    directionToTarget.x = 0.0f;
+                    directionToTarget.y = 0.0f;
+                    break;
+
+                case PivotAxis.XY:
+                    targetUpVector = transform.up;
+                    break;
+
+                case PivotAxis.XZ:
+                    directionToTarget.x = 0.0f;
+                    break;
+
+                case PivotAxis.YZ:
                     directionToTarget.y = 0.0f;
                     break;
 
@@ -63,7 +116,7 @@ namespace HoloToolkit.Unity
             }
 
             // Calculate and apply the rotation required to reorient the object
-            transform.rotation = Quaternion.LookRotation(-directionToTarget);
+            transform.rotation = Quaternion.LookRotation(-directionToTarget, targetUpVector);
         }
     }
 }

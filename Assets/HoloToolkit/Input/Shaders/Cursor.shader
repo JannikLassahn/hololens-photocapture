@@ -1,4 +1,7 @@
-﻿Shader "HoloToolkit/Cursor"
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+
+Shader "MixedRealityToolkit/Cursor"
 {
 	Properties
 	{
@@ -37,7 +40,7 @@
 				UNITY_SETUP_INSTANCE_ID(v);
 
 				v2f o;
-				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+				o.vertex = UnityObjectToClipPos(v.vertex);
 
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 				return o;
